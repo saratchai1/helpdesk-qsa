@@ -3,6 +3,7 @@ import type { CountItem, MonthlyPoint, QsaRow, WorkbookData } from '../types';
 export const THAI_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 export const ENG_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 export const WARRANTY_ORDER: QsaRow['warrantyClass'][] = ['Warranty ปีที่ 1', 'Warranty ปีที่ 2', 'Warranty ปีที่ 3', 'Out Warranty'];
+export interface WarrantySeriesRow { period: string; total: number; [key: string]: string | number; }
 
 export function monthLabel(year: number, month: number): string { return `${ENG_MONTHS[month - 1]}-${String(year).slice(-2)}`; }
 export function reportTitleMonth(year: number, month: number): string { return `${ENG_MONTHS[month - 1]}-${year}`; }
@@ -49,10 +50,10 @@ export function warrantyBreakdown(data: WorkbookData, year = data.period.year, m
   return WARRANTY_ORDER.map((name) => ({ name, value: counts.get(name) ?? 0 }));
 }
 
-export function warrantyBreakdownSeries(data: WorkbookData, n = 3) {
+export function warrantyBreakdownSeries(data: WorkbookData, n = 3): WarrantySeriesRow[] {
   return lastNPeriods(data.period.year, data.period.month, n).map((p) => {
     const wb = warrantyBreakdown(data, p.year, p.month);
-    return { period:p.label, ...Object.fromEntries(wb.map((x) => [x.name, x.value])), total:wb.reduce((s,x)=>s+x.value,0) };
+    return { period:p.label, ...Object.fromEntries(wb.map((x) => [x.name, x.value])), total:wb.reduce((s,x)=>s+x.value,0) } as WarrantySeriesRow;
   });
 }
 
