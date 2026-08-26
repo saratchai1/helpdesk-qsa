@@ -14,8 +14,9 @@ import {
   warrantyMatrix, warrantyRows, yearComparison,
 } from '../lib/reportEngine';
 
-const COLORS = ['#4472C4','#ED7D31','#A5A5A5','#70AD47','#FFC000','#5B9BD5','#264478','#9E480E','#43682B','#997300'];
-const WARRANTY_COLORS = ['#70AD47','#A5A5A5','#FFC000','#F44336'];
+const COLORS = ['#4472C4','#ED7D31','#A5A5A5','#FFC000','#5B9BD5','#70AD47','#264478','#9E480E','#43682B','#997300'];
+const WARRANTY_COLORS = ['#385723','#548235','#A9D18E','#FF0000'];
+const COUNT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
 export const REPORT_TABS = [
   'Cover',
@@ -38,15 +39,16 @@ export const REPORT_TABS = [
 export type ReportTab = (typeof REPORT_TABS)[number];
 
 function sum(values:number[]){ return values.reduce((a,b)=>a+b,0); }
+function num(value:number|null|undefined, blankZero=false){ if(value==null || !Number.isFinite(value)) return ''; if(blankZero && value===0) return ''; return COUNT.format(value); }
 function pct(value:number){ return `${Math.round(value*100)}%`; }
 function periodText(data:WorkbookData){ return reportTitleMonth(data.period.year,data.period.month); }
 function ticket(r:QsaRow){ return r.ticketNo || r.referenceNo; }
 function monthName(month:number|null){ return month ? ENG_MONTHS[month-1] : ''; }
 
-function Wordmark(){ return <div className="ditto-wordmark"><span>◉</span>ditto</div>; }
+function BrandLogo({className=''}:{className?:string}){ return <img src="/ditto-logo.png" className={`ditto-logo-img ${className}`} alt="Ditto Data Intelligence"/>; }
 function ReportPage({title,children,titleAccent,className=''}:{title:ReactNode;children:ReactNode;titleAccent?:'green'|'red';className?:string}){
   return <section className={`report-page ${className}`} data-report-page data-orientation="landscape">
-    <header className="ppt-header"><h2 className={titleAccent?`title-${titleAccent}`:''}>{title}</h2><Wordmark/></header>
+    <header className="ppt-header"><h2 className={titleAccent?`title-${titleAccent}`:''}>{title}</h2><BrandLogo/></header>
     <div className="ppt-body">{children}</div>
   </section>;
 }
@@ -61,7 +63,7 @@ function BasicTable({headers,rows,className=''}:{headers:ReactNode[];rows:ReactN
 function Cover({data}:{data:WorkbookData}){
   const label=`${ENG_MONTHS[data.period.month-1]} - ${data.period.year}`;
   return <section className="report-page cover-slide" data-report-page data-orientation="landscape">
-    <Wordmark/>
+    <BrandLogo className="cover-logo"/>
     <div className="cover-geo cover-geo-a"/><div className="cover-geo cover-geo-b"/><div className="cover-geo cover-geo-c"/>
     <div className="cover-content">
       <div className="cover-kicker">{label}</div>
@@ -118,13 +120,14 @@ function CasesTypeCont({data}:{data:WorkbookData}){
 }
 
 function CategoryDriveThru({data}:{data:WorkbookData}){
-  const trend=categoryTrend(data,3); const categories=trend.categories;
+  const trend=categoryTrend(data,3); const periods=lastNPeriods(data.period.year,data.period.month,3); const categories=trend.categories;
   const grand=categories.map(c=>sum(trend.rows.map(r=>Number(r[c]??0))));
+  const chartRows=categories.map(category=>({category,...Object.fromEntries(trend.rows.map(r=>[String(r.period),Number(r[category]??0)]))}));
   return <ReportPage title="Category Drive thru (Type การแจ้งปัญหา)">
-    <div className="chart-panel category-chart"><div className="chart-title">Drive Thru</div><ResponsiveContainer width="100%" height={360}><LineChart data={trend.rows}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="period"/><YAxis allowDecimals={false}/><Tooltip/><Legend/>{categories.map((c,i)=><Line key={c} type="monotone" dataKey={c} stroke={COLORS[i%COLORS.length]} strokeWidth={2}/>)}</LineChart></ResponsiveContainer></div>
+    <div className="chart-panel category-chart"><div className="chart-title">Drive Thru</div><ResponsiveContainer width="100%" height={360}><LineChart data={chartRows}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="category" interval={0} tick={{fontSize:10}}/><YAxis allowDecimals={false}/><Tooltip formatter={(value:any)=>num(Number(value))}/><Legend/>{periods.map((p,i)=><Line key={p.label} type="monotone" dataKey={p.label} name={p.label} stroke={['#4472C4','#ED7D31','#A5A5A5'][i]} strokeWidth={2}/>)}</LineChart></ResponsiveContainer></div>
     <table className="ppt-table category-cross"><thead><tr><th>ประเภทการแจ้ง</th><th>Months</th>{categories.map(c=><th key={c}>{c}</th>)}<th>Grand Total</th></tr></thead><tbody>
-      {trend.rows.map((r,i)=>{const total=sum(categories.map(c=>Number(r[c]??0))); return <tr key={String(r.period)} className={i===trend.rows.length-1?'current-row':''}><td>{i===0?String(data.period.year):''}</td><td>{String(r.period)}</td>{categories.map(c=><td key={c}>{Number(r[c]??0)||''}</td>)}<td>{total}</td></tr>})}
-      <tr className="grand-row"><td>Grand Total</td><td></td>{grand.map((v,i)=><td key={i}>{v}</td>)}<td>{sum(grand)}</td></tr>
+      {trend.rows.map((r,i)=>{const total=sum(categories.map(c=>Number(r[c]??0))); return <tr key={String(r.period)} className={i===trend.rows.length-1?'current-row':''}><td>{i===0?String(data.period.year):''}</td><td>{String(r.period)}</td>{categories.map(c=><td key={c}>{num(Number(r[c]??0),true)}</td>)}<td>{num(total)}</td></tr>})}
+      <tr className="grand-row"><td>Grand Total</td><td></td>{grand.map((v,i)=><td key={i}>{num(v)}</td>)}<td>{num(sum(grand))}</td></tr>
     </tbody></table>
   </ReportPage>;
 }
@@ -163,9 +166,9 @@ function OutWarranty({data}:{data:WorkbookData}){
   </ReportPage>;
 }
 
-function PieBlock({data,height=220}:{data:{name:string;value:number}[];height?:number}){
+function PieBlock({data,height=220,colors=COLORS}:{data:{name:string;value:number}[];height?:number;colors?:string[]}){
   const filtered=data.filter(x=>x.value>0);
-  return <ResponsiveContainer width="100%" height={height}><PieChart><Pie data={filtered} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius="78%" label={({name,value}:any)=>`${name} ${value}`} labelLine>{filtered.map((_,i)=><Cell key={i} fill={COLORS[i%COLORS.length]}/>)}</Pie><Tooltip/></PieChart></ResponsiveContainer>;
+  return <ResponsiveContainer width="100%" height={height}><PieChart><Pie data={filtered} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius="78%" label={({name,value}:any)=>`${name} ${num(Number(value))}`} labelLine>{filtered.map((_,i)=><Cell key={i} fill={colors[i%colors.length]}/>)}</Pie><Tooltip formatter={(value:any)=>num(Number(value))}/></PieChart></ResponsiveContainer>;
 }
 
 function Top5Category({data}:{data:WorkbookData}){
@@ -227,7 +230,7 @@ function Top5StoreCont({data}:{data:WorkbookData}){
 function CasesPending({data}:{data:WorkbookData}){
   const h=pendingStatusHistory(data); const last=h.periods.length-1; const pie=h.rows.map(r=>({name:r.status,value:r.values[last]??0})).filter(x=>x.value>0);
   return <ReportPage title={`Cases Pending Drive Thru as of ${periodText(data)}`}>
-    <div className="pending-chart chart-panel"><div className="chart-title">{periodText(data)}</div><PieBlock data={pie} height={270}/></div>
+    <div className="pending-chart chart-panel"><div className="chart-title">{periodText(data)}</div><PieBlock data={pie} height={270} colors={pie.map(x=>x.name==='Resolved'?'#4472C4':'#A5A5A5')}/></div>
     <table className="ppt-table pending-history"><thead><tr><th>สถานะงาน</th>{h.periods.map(p=><th key={p.label}>{p.label}</th>)}<th>Grand Total</th></tr></thead><tbody>
       {h.rows.map(r=><tr key={r.status}><td>{r.status}</td>{r.values.map((v,i)=><td key={i}>{v||''}</td>)}<td>{sum(r.values)||''}</td></tr>)}
       <tr className="grand-row"><td>Grand Total</td>{h.totals.map((v,i)=><td key={i}>{v}</td>)}<td>{sum(h.totals)}</td></tr>
@@ -252,7 +255,7 @@ function DetailPending({data}:{data:WorkbookData}){
   </tbody></table></ReportPage>;
 }
 
-function ThankYou(){ return <section className="report-page thank-slide" data-report-page data-orientation="landscape"><Wordmark/><div className="thank-photo"><div className="handshake-shape left"/><div className="handshake-shape right"/></div><div className="thank-text">Thank you</div></section>; }
+function ThankYou(){ return <section className="report-page thank-slide" data-report-page data-orientation="landscape"><BrandLogo className="thank-logo"/><div className="thank-photo"><div className="handshake-shape left"/><div className="handshake-shape right"/></div><div className="thank-text">Thank you</div></section>; }
 
 export function ReportContent({tab,data}:{tab:ReportTab;data:WorkbookData}){
   switch(tab){
