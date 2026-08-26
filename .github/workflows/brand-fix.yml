@@ -1,0 +1,28 @@
+name: Apply QSA report fidelity fix
+
+on:
+  push:
+    paths:
+      - scripts/brand_fix.py
+      - .github/workflows/brand-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply report renderer fixes
+        run: python scripts/brand_fix.py
+      - name: Commit renderer changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/Reports.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "style: match QSA report charts, logo, and number formatting"
+          git push origin HEAD:main
