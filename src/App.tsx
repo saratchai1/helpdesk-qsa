@@ -102,7 +102,9 @@ export default function App() {
         <div className="report-toolbar-title">
           <p className="overline">MONTHLY QSA REPORT</p>
           <h1>{reportTitleMonth(data.period.year, data.period.month)}</h1>
-          <div className="report-meta">{data.fileName} · {data.rows.toLocaleString()} records · {REPORT_TABS.length} pages</div>
+          <div className="report-meta">
+            {data.fileName} · {data.rows.length.toLocaleString('en-US')} records · {data.sheetName} · {REPORT_TABS.length} pages
+          </div>
         </div>
         <div className="toolbar-actions">
           <button className="button secondary" onClick={() => { setData(null); setError(''); }}>
