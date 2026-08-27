@@ -6,6 +6,21 @@ import { regressionSnapshot, reportTitleMonth } from './lib/reportEngine';
 import { REPORT_TABS, ReportContent } from './components/Reports';
 import type { WorkbookData } from './types';
 
+function ThankYouPhotoPage() {
+  return (
+    <section className="report-page thank-slide-photo" data-report-page data-orientation="landscape">
+      <img
+        src="/thank-you-bg.jpg"
+        className="thank-bg-image"
+        alt="Business handshake"
+        loading="eager"
+        decoding="sync"
+      />
+      <div className="thank-photo-text">Thank you</div>
+    </section>
+  );
+}
+
 export default function App() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [data, setData] = useState<WorkbookData | null>(null);
@@ -137,7 +152,7 @@ export default function App() {
         {REPORT_TABS.map((tab, index) => (
           <div className="report-page-shell" key={tab}>
             <div className="report-page-number">Page {index + 1} / {REPORT_TABS.length}</div>
-            <ReportContent tab={tab} data={data} />
+            {tab === 'Thank you' ? <ThankYouPhotoPage /> : <ReportContent tab={tab} data={data} />}
           </div>
         ))}
       </section>
