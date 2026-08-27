@@ -1,18 +1,144 @@
 import { useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, RotateCcw, ShieldCheck, UploadCloud } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, Loader2, RotateCcw, ShieldCheck, UploadCloud } from 'lucide-react';
 import { parseQsaWorkbook } from './lib/excel';
 import { exportReportPdf } from './lib/exportPdf';
 import { regressionSnapshot, reportTitleMonth } from './lib/reportEngine';
-import { REPORT_TABS, ReportContent, type ReportTab } from './components/Reports';
+import { REPORT_TABS, ReportContent } from './components/Reports';
 import type { WorkbookData } from './types';
-function safeName(value:string){return value.replace(/[^\p{L}\p{N}_-]+/gu,'_').replace(/^_+|_+$/g,'');}
-export default function App(){
-  const inputRef=useRef<HTMLInputElement|null>(null); const [data,setData]=useState<WorkbookData|null>(null); const [active,setActive]=useState<ReportTab>('Received Cases Trend'); const [loading,setLoading]=useState(false); const [exporting,setExporting]=useState(false); const [error,setError]=useState(''); const [drag,setDrag]=useState(false);
-  const snapshot=useMemo(()=>data?regressionSnapshot(data):null,[data]);
-  const sampleMatch=data?.period.year===2026&&data?.period.month===6&&snapshot?snapshot.currentTotal===30&&snapshot.warranty['Out Warranty']===25&&snapshot.warranty['Warranty ปีที่ 1']===3&&snapshot.warranty['Warranty ปีที่ 2']===2&&snapshot.pending===9:null;
-  async function loadFile(file:File){ if(!/\.xlsx?$/i.test(file.name)){setError('รองรับไฟล์ Excel .xlsx / .xls เท่านั้น');return;} setLoading(true);setError(''); try{const parsed=await parseQsaWorkbook(file);setData(parsed);setActive('Received Cases Trend');}catch(e){setError(e instanceof Error?e.message:'อ่านไฟล์ไม่สำเร็จ');}finally{setLoading(false);} }
-  async function exportCurrent(){if(!data)return;const els=[...document.querySelectorAll<HTMLElement>('#active-report [data-report-page]')];if(!els.length)return;setExporting(true);try{await exportReportPdf(els,`${safeName(active)}_${reportTitleMonth(data.period.year,data.period.month)}.pdf`);}finally{setExporting(false);}}
-  async function exportAll(){if(!data)return;const els=[...document.querySelectorAll<HTMLElement>('#pdf-book [data-report-page]')];setExporting(true);try{await exportReportPdf(els,`QSA_Monthly_Report_${reportTitleMonth(data.period.year,data.period.month)}.pdf`);}finally{setExporting(false);}}
-  if(!data)return <main className="landing"><div className="landing-card"><img src="/ditto-logo.png" className="app-logo-image" alt="Ditto Data Intelligence"/><p className="overline">HELPDESK QSA</p><h1>QSA Monthly Report Generator</h1><p className="lead">อัปโหลด raw data จากระบบ แล้วสร้างตาราง กราฟ และ PDF ตาม Excel/PPT Monthly QSA โดยอัตโนมัติ</p><div className={`dropzone ${drag?'drag':''}`} onDragOver={(e:any)=>{e.preventDefault();setDrag(true)}} onDragLeave={()=>setDrag(false)} onDrop={(e:any)=>{e.preventDefault();setDrag(false);const f=e.dataTransfer.files[0];if(f)void loadFile(f)}} onClick={()=>inputRef.current?.click()}>{loading?<Loader2 className="spin" size={42}/>:<UploadCloud size={42}/>}<strong>{loading?'กำลังอ่านและคำนวณรายงาน…':'วางไฟล์ Excel ที่นี่ หรือคลิกเพื่อเลือกไฟล์'}</strong><span>หา tab “Worksheet” อัตโนมัติ · ตารางและกราฟสร้างจาก raw data · ประมวลผลใน Browser</span><input ref={inputRef} type="file" accept=".xlsx,.xls" hidden onChange={(e:any)=>{const f=e.target.files?.[0];if(f)void loadFile(f)}}/></div>{error&&<div className="error-box"><AlertTriangle size={18}/>{error}</div>}<div className="privacy-note"><ShieldCheck size={18}/><span><b>Client-side only:</b> raw helpdesk data อยู่ในเครื่องของผู้ใช้ การสร้างรายงานและ PDF ทำใน browser</span></div></div></main>;
-  return <div className="app-shell"><aside className="sidebar"><div className="side-brand"><img src="/ditto-logo.png" className="app-logo-image small" alt="Ditto Data Intelligence"/><div><b>QSA Report</b><span>{reportTitleMonth(data.period.year,data.period.month)}</span></div></div><div className="file-card"><FileSpreadsheet size={17}/><div><strong>{data.fileName}</strong><span>{data.rows.toLocaleString()} records · {data.sheetName}</span></div></div><nav>{REPORT_TABS.map(tab=><button key={tab} className={active===tab?'active':''} onClick={()=>setActive(tab)}>{tab}</button>)}</nav><button className="reset-button" onClick={()=>{setData(null);setError('')}}><RotateCcw size={16}/>Upload new file</button></aside><main className="workspace"><header className="toolbar"><div><p className="overline">MONTHLY QSA · POWERPOINT STYLE</p><h1>{active}</h1></div><div className="toolbar-actions"><button className="button secondary" onClick={exportCurrent} disabled={exporting}><Download size={17}/>Current tab PDF</button><button className="button primary" onClick={exportAll} disabled={exporting}>{exporting?<Loader2 className="spin" size={17}/>:<Download size={17}/>}Export all PDF</button></div></header>{data.warnings.length>0&&<div className="warning-strip"><AlertTriangle size={17}/><div>{data.warnings.map((w,i)=><span key={i}>{w}</span>)}</div></div>}{sampleMatch!==null&&<div className={`validation-strip ${sampleMatch?'ok':'bad'}`}>{sampleMatch?<CheckCircle2 size={17}/>:<AlertTriangle size={17}/>}<span>{sampleMatch?'Jun-2026 regression check ผ่าน: 30 cases / Warranty 3-2-0-25 / Pending 9 ตรงกับไฟล์ตัวอย่าง':'Jun-2026 regression check ไม่ตรงกับ baseline — ควรตรวจรูปแบบ raw data หรือ classification columns'}</span></div>}<div id="active-report" className="active-report"><ReportContent tab={active} data={data}/></div><div id="pdf-book" className="pdf-book" aria-hidden="true">{REPORT_TABS.map(tab=><ReportContent key={tab} tab={tab} data={data}/>)}</div></main></div>;
+
+export default function App() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [data, setData] = useState<WorkbookData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [error, setError] = useState('');
+  const [drag, setDrag] = useState(false);
+
+  const snapshot = useMemo(() => (data ? regressionSnapshot(data) : null), [data]);
+  const sampleMatch = data?.period.year === 2026 && data?.period.month === 6 && snapshot
+    ? snapshot.currentTotal === 30
+      && snapshot.warranty['Out Warranty'] === 25
+      && snapshot.warranty['Warranty ปีที่ 1'] === 3
+      && snapshot.warranty['Warranty ปีที่ 2'] === 2
+      && snapshot.pending === 9
+    : null;
+
+  async function loadFile(file: File) {
+    if (!/\.xlsx?$/i.test(file.name)) {
+      setError('รองรับไฟล์ Excel .xlsx / .xls เท่านั้น');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const parsed = await parseQsaWorkbook(file);
+      setData(parsed);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'อ่านไฟล์ไม่สำเร็จ');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function exportAll() {
+    if (!data) return;
+    const pages = [...document.querySelectorAll<HTMLElement>('#report-book [data-report-page]')];
+    if (!pages.length) return;
+    setExporting(true);
+    try {
+      await exportReportPdf(
+        pages,
+        `QSA_Monthly_Report_${reportTitleMonth(data.period.year, data.period.month)}.pdf`,
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  if (!data) {
+    return (
+      <main className="landing">
+        <div className="landing-card">
+          <img src="/ditto-logo.png" className="app-logo-image" alt="Ditto Data Intelligence" />
+          <p className="overline">HELPDESK QSA</p>
+          <h1>QSA Monthly Report Generator</h1>
+          <p className="lead">อัปโหลด raw data จากระบบ แล้วสร้างตาราง กราฟ และ PDF ตาม Excel/PPT Monthly QSA โดยอัตโนมัติ</p>
+          <div
+            className={`dropzone ${drag ? 'drag' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDrag(false);
+              const file = e.dataTransfer.files[0];
+              if (file) void loadFile(file);
+            }}
+            onClick={() => inputRef.current?.click()}
+          >
+            {loading ? <Loader2 className="spin" size={42} /> : <UploadCloud size={42} />}
+            <strong>{loading ? 'กำลังอ่านและคำนวณรายงาน…' : 'วางไฟล์ Excel ที่นี่ หรือคลิกเพื่อเลือกไฟล์'}</strong>
+            <span>หา tab “Worksheet” อัตโนมัติ · ตารางและกราฟสร้างจาก raw data · ประมวลผลใน Browser</span>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void loadFile(file);
+              }}
+            />
+          </div>
+          {error && <div className="error-box"><AlertTriangle size={18} />{error}</div>}
+          <div className="privacy-note"><ShieldCheck size={18} /><span><b>Client-side only:</b> raw helpdesk data อยู่ในเครื่องของผู้ใช้ การสร้างรายงานและ PDF ทำใน browser</span></div>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="report-app">
+      <header className="report-toolbar">
+        <div className="report-toolbar-title">
+          <p className="overline">MONTHLY QSA REPORT</p>
+          <h1>{reportTitleMonth(data.period.year, data.period.month)}</h1>
+          <div className="report-meta">{data.fileName} · {data.rows.toLocaleString()} records · {REPORT_TABS.length} pages</div>
+        </div>
+        <div className="toolbar-actions">
+          <button className="button secondary" onClick={() => { setData(null); setError(''); }}>
+            <RotateCcw size={17} /> Upload new file
+          </button>
+          <button className="button primary" onClick={exportAll} disabled={exporting}>
+            {exporting ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
+            Export PDF
+          </button>
+        </div>
+      </header>
+
+      {data.warnings.length > 0 && (
+        <div className="warning-strip report-status-strip">
+          <AlertTriangle size={17} />
+          <div>{data.warnings.map((warning, i) => <span key={i}>{warning}</span>)}</div>
+        </div>
+      )}
+
+      {sampleMatch !== null && (
+        <div className={`validation-strip report-status-strip ${sampleMatch ? 'ok' : 'bad'}`}>
+          {sampleMatch ? <CheckCircle2 size={17} /> : <AlertTriangle size={17} />}
+          <span>{sampleMatch
+            ? 'Jun-2026 regression check ผ่าน: 30 cases / Warranty 3-2-0-25 / Pending 9 ตรงกับไฟล์ตัวอย่าง'
+            : 'Jun-2026 regression check ไม่ตรงกับ baseline — ควรตรวจรูปแบบ raw data หรือ classification columns'}</span>
+        </div>
+      )}
+
+      <section id="report-book" className="report-book" aria-label="QSA monthly report pages">
+        {REPORT_TABS.map((tab, index) => (
+          <div className="report-page-shell" key={tab}>
+            <div className="report-page-number">Page {index + 1} / {REPORT_TABS.length}</div>
+            <ReportContent tab={tab} data={data} />
+          </div>
+        ))}
+      </section>
+    </main>
+  );
 }
