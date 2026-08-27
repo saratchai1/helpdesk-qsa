@@ -119,28 +119,36 @@
 .pending-chart path[fill='#FFC000']{fill:#A5A5A5!important}
 .pending-chart path[fill='#4472C4']{fill:#4472C4!important}
 
-/* Page 16 — restore the original report's thank-you format. */
-.thank-slide{
-  background:#fff url('/thank-you-bg.jpg') center center / cover no-repeat!important;
+/* Page 16 — actual image element, not CSS background. */
+.thank-slide-photo{
+  position:relative!important;
   padding:0!important;
   overflow:hidden!important;
+  background:#fff!important;
 }
-.thank-slide:before{
+.thank-slide-photo:before,
+.thank-slide-photo:after{
   content:none!important;
   display:none!important;
 }
-.thank-slide .thank-photo,
-.thank-slide .handshake-shape,
-.thank-slide .thank-logo{
-  display:none!important;
+.thank-bg-image{
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  z-index:1!important;
 }
-.thank-slide .thank-text{
+.thank-photo-text{
   position:absolute!important;
   left:128px!important;
-  top:148px!important;
-  z-index:10!important;
+  top:150px!important;
+  z-index:2!important;
   margin:0!important;
-  color:rgba(92,92,92,.72)!important;
+  color:rgba(94,94,94,.76)!important;
   font-family:Arial,Tahoma,sans-serif!important;
   font-size:64px!important;
   line-height:1!important;
