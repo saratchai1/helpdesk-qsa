@@ -1,1 +1,133 @@
-.ditto-wordmark{display:block;width:148px;height:42px;flex:0 0 148px;background:url('/ditto-logo.png') center/contain no-repeat;font-size:0!important;line-height:0!important;color:transparent!important;letter-spacing:0!important;overflow:hidden}.ditto-wordmark span{display:none!important}.ppt-header .ditto-wordmark{margin-top:-5px;margin-right:0}.cover-slide>.ditto-wordmark,.thank-slide>.ditto-wordmark{position:absolute;z-index:10;right:46px;top:28px;width:168px;height:47px;background-size:contain}.report-page .recharts-text,.report-page .recharts-label,.report-page .recharts-default-tooltip{font-variant-numeric:tabular-nums lining-nums}.cases-left path[fill='#70AD47']{fill:#385723!important}.cases-left path[fill='#A5A5A5']{fill:#548235!important}.cases-left path[fill='#FFC000']{fill:#A9D18E!important}.cases-left path[fill='#F44336']{fill:#FF0000!important}.pending-chart path[fill='#ED7D31'],.pending-chart path[fill='#70AD47'],.pending-chart path[fill='#FFC000']{fill:#A5A5A5!important}.pending-chart path[fill='#4472C4']{fill:#4472C4!important}.ppt-table td,.ppt-table th{font-variant-numeric:tabular-nums lining-nums}.ppt-table tr.grand-row td,.ppt-table tr.total-row td{font-weight:700}.ppt-table td:nth-last-child(1){font-weight:600}.yearly-table td:nth-child(3),.yearly-table td:nth-child(5),.top-category-table td:nth-child(n+3),.received-table td:nth-child(n+2){white-space:nowrap}
+/* Final application/layout overrides. Loaded after styles.css and ppt16.css. */
+
+/* Use the exact supplied logo without clipping it. */
+.ditto-logo-img{
+  display:block!important;
+  width:190px!important;
+  height:58px!important;
+  min-width:190px!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  overflow:visible!important;
+  flex:0 0 190px!important;
+  margin:0!important;
+}
+.ppt-header{
+  overflow:visible!important;
+  align-items:flex-start!important;
+}
+.ppt-header .ditto-logo-img{
+  width:190px!important;
+  height:58px!important;
+  margin-top:-2px!important;
+  margin-right:0!important;
+}
+.cover-logo,
+.thank-logo{
+  position:absolute!important;
+  right:42px!important;
+  top:24px!important;
+  z-index:20!important;
+  width:220px!important;
+  height:70px!important;
+  min-width:220px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+}
+.app-logo-image{
+  display:block!important;
+  width:230px!important;
+  height:74px!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+  overflow:visible!important;
+}
+
+/* No left navigation. The web page is the complete report book. */
+.report-app{
+  min-height:100vh;
+  background:#f3f6fa;
+  padding:0 28px 56px;
+}
+.report-toolbar{
+  position:sticky;
+  top:0;
+  z-index:50;
+  min-height:94px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:16px max(0px, calc((100vw - 1360px) / 2));
+  background:rgba(243,246,250,.96);
+  border-bottom:1px solid #d9e1ea;
+  backdrop-filter:blur(12px);
+}
+.report-toolbar-title .overline{margin:0 0 3px}
+.report-toolbar-title h1{margin:0;color:#17365d;font-size:28px;line-height:1.15}
+.report-meta{margin-top:5px;color:#718096;font-size:12px}
+.report-status-strip{max-width:1280px;margin:14px auto 0}
+.report-book{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:30px;
+  padding:22px 0 10px;
+  overflow-x:auto;
+}
+.report-page-shell{
+  width:1280px;
+  flex:0 0 auto;
+}
+.report-page-number{
+  width:1280px;
+  margin:0 auto 7px;
+  text-align:right;
+  color:#718096;
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+}
+.report-page-shell>.report-page{
+  margin:0 auto!important;
+}
+
+/* Recharts / tables: stable numeric alignment. */
+.report-page .recharts-text,
+.report-page .recharts-label,
+.report-page .recharts-default-tooltip,
+.ppt-table td,
+.ppt-table th{
+  font-variant-numeric:tabular-nums lining-nums;
+}
+.ppt-table tr.grand-row td,
+.ppt-table tr.total-row td{font-weight:700}
+.ppt-table td:nth-last-child(1){font-weight:600}
+.yearly-table td:nth-child(3),
+.yearly-table td:nth-child(5),
+.top-category-table td:nth-child(n+3),
+.received-table td:nth-child(n+2){white-space:nowrap}
+
+/* Warranty and pending chart palette from the supplied PowerPoint. */
+.cases-left path[fill='#70AD47']{fill:#385723!important}
+.cases-left path[fill='#A5A5A5']{fill:#548235!important}
+.cases-left path[fill='#FFC000']{fill:#A9D18E!important}
+.cases-left path[fill='#F44336']{fill:#FF0000!important}
+.pending-chart path[fill='#ED7D31'],
+.pending-chart path[fill='#70AD47'],
+.pending-chart path[fill='#FFC000']{fill:#A5A5A5!important}
+.pending-chart path[fill='#4472C4']{fill:#4472C4!important}
+
+@media(max-width:900px){
+  .report-app{padding:0 10px 36px}
+  .report-toolbar{position:relative;align-items:flex-start;flex-direction:column;padding:14px 4px}
+  .toolbar-actions{width:100%;flex-wrap:wrap}
+  .report-book{align-items:flex-start}
+}
+
+@media print{
+  .report-toolbar,.report-status-strip,.report-page-number{display:none!important}
+  .report-app{padding:0;background:#fff}
+  .report-book{gap:0;padding:0;overflow:visible}
+}
