@@ -10,13 +10,12 @@ function ThankYouPhotoPage() {
   return (
     <section className="report-page thank-slide-photo" data-report-page data-orientation="landscape">
       <img
-        src="/thank-you-bg.jpg"
+        src="/thank-you-final.webp"
         className="thank-bg-image"
-        alt="Business handshake"
+        alt="Thank you"
         loading="eager"
         decoding="sync"
       />
-      <div className="thank-photo-text">Thank you</div>
     </section>
   );
 }
@@ -26,6 +25,7 @@ export default function App() {
   const [data, setData] = useState<WorkbookData | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
   const [error, setError] = useState('');
   const [drag, setDrag] = useState(false);
 
@@ -56,15 +56,20 @@ export default function App() {
   }
 
   async function exportAll() {
-    if (!data) return;
+    if (!data || exporting) return;
     const pages = [...document.querySelectorAll<HTMLElement>('#report-book [data-report-page]')];
     if (!pages.length) return;
     setExporting(true);
+    setExportProgress(0);
+    setError('');
     try {
       await exportReportPdf(
         pages,
         `QSA_Monthly_Report_${reportTitleMonth(data.period.year, data.period.month)}.pdf`,
+        (done) => setExportProgress(done),
       );
+    } catch (e) {
+      setError(`Export PDF ไม่สำเร็จ: ${e instanceof Error ? e.message : 'unknown error'}`);
     } finally {
       setExporting(false);
     }
@@ -122,15 +127,17 @@ export default function App() {
           </div>
         </div>
         <div className="toolbar-actions">
-          <button className="button secondary" onClick={() => { setData(null); setError(''); }}>
+          <button className="button secondary" onClick={() => { setData(null); setError(''); }} disabled={exporting}>
             <RotateCcw size={17} /> Upload new file
           </button>
           <button className="button primary" onClick={exportAll} disabled={exporting}>
             {exporting ? <Loader2 className="spin" size={17} /> : <Download size={17} />}
-            Export PDF
+            {exporting ? `Exporting ${exportProgress}/${REPORT_TABS.length}` : 'Export PDF'}
           </button>
         </div>
       </header>
+
+      {error && <div className="error-box report-status-strip"><AlertTriangle size={17} />{error}</div>}
 
       {data.warnings.length > 0 && (
         <div className="warning-strip report-status-strip">
